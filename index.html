@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Salary Structure Calculator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --bg: #f7f8fa; --card: #fff; --border: #e2e4e9;
+      --text: #111827; --muted: #6b7280; --subtle: #9ca3af;
+      --r-md: 8px; --r-lg: 12px;
+      --ok-bg: #d1fae5; --ok-fg: #065f46;
+      --err-bg: #fee2e2; --err-fg: #991b1b;
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+
+    /* Header */
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; }
+    .page-header .icon-wrap { width: 42px; height: 42px; border-radius: var(--r-md); background: #111; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px rgba(160,160,160,.2), 0 2px 8px rgba(0,0,0,.25); flex-shrink: 0; }
+    .page-header .icon-wrap i { font-size: 20px; color: #fff; }
+    .page-header h1 { font-size: 20px; font-weight: 600; }
+    .page-header p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .card-title { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--subtle); margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+
+    /* Grid */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+
+    /* Dark inputs */
+    .inp-wrap { display: flex; align-items: center; border: 1px solid #444; border-radius: 6px; overflow: hidden; background: #111; height: 36px; box-shadow: 0 0 0 3px rgba(150,150,150,.15), 0 2px 6px rgba(0,0,0,.3); transition: box-shadow .15s, border-color .15s; }
+    .inp-wrap:focus-within { box-shadow: 0 0 0 3px rgba(180,180,180,.28), 0 2px 10px rgba(0,0,0,.4); border-color: #777; }
+    .inp-prefix { padding: 0 10px; font-size: 13px; font-weight: 500; color: #999; background: #1c1c1c; border-right: 1px solid #333; height: 100%; display: flex; align-items: center; flex-shrink: 0; }
+    .inp-wrap input { border: none; outline: none; padding: 0 10px; font-size: 13px; font-family: var(--font); background: #111; color: #fff; width: 100%; height: 100%; }
+    .inp-wrap input::placeholder { color: #555; }
+    select.ds, input.ds-plain {
+      font-size: 13px; font-family: var(--font); height: 36px; width: 100%;
+      background: #111; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 0 10px;
+      box-shadow: 0 0 0 3px rgba(150,150,150,.15), 0 2px 6px rgba(0,0,0,.3);
+      transition: box-shadow .15s, border-color .15s;
+    }
+    select.ds:focus, input.ds-plain:focus { outline: none; box-shadow: 0 0 0 3px rgba(180,180,180,.28), 0 2px 10px rgba(0,0,0,.4); border-color: #777; }
+    select.ds option { background: #1c1c1c; color: #fff; }
+    input.ds-plain::placeholder { color: #555; }
+    .readonly-box { height: 36px; display: flex; align-items: center; padding: 0 10px; background: #111; color: #fff; border: 1px solid #444; border-radius: 6px; font-size: 13px; font-weight: 500; box-shadow: 0 0 0 3px rgba(150,150,150,.15), 0 2px 6px rgba(0,0,0,.3); }
+
+    /* Buttons */
+    .btn { height: 38px; font-size: 13px; font-weight: 600; font-family: var(--font); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; transition: background .15s, box-shadow .15s; letter-spacing: .03em; }
+    .btn-dark { background: #111; color: #fff; border: 1px solid #444; box-shadow: 0 0 0 3px rgba(150,150,150,.15), 0 2px 6px rgba(0,0,0,.3); }
+    .btn-dark:hover { background: #1e1e1e; box-shadow: 0 0 0 3px rgba(180,180,180,.25), 0 3px 12px rgba(0,0,0,.4); }
+    .btn-full { width: 100%; }
+    .btn i { font-size: 16px; }
+
+    /* Offer buttons row */
+    .offer-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .btn-offer { background: #0d3b6e; color: #fff; border: 1px solid #1a5599; box-shadow: 0 0 0 3px rgba(100,150,220,.15), 0 2px 6px rgba(0,0,0,.3); }
+    .btn-offer:hover { background: #0a2e55; }
+    .btn-offer:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Badge */
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 12px; border-radius: 999px; margin-bottom: 1rem; font-weight: 500; }
+    .badge.ok  { background: var(--ok-bg);  color: var(--ok-fg);  }
+    .badge.err { background: var(--err-bg); color: var(--err-fg); }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #1c1c2e; color: #fff; padding: 9px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .04em; }
+    th.num { text-align: right; }
+    td { padding: 8px 14px; border-bottom: 1px solid #f0f0f2; color: var(--text); font-size: 13px; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:nth-child(even) td { background: #fafafa; }
+    tr:nth-child(odd)  td { background: #fff; }
+    tr.gross td { background: #1565c0; color: #fff; font-weight: 600; }
+    tr.net   td { background: #00695c; color: #fff; font-weight: 600; }
+    tr.total td { background: #2e7d32; color: #fff; font-weight: 600; }
+    tr.gross td.num, tr.net td.num, tr.total td.num { color: #fff; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* Offer module */
+    .offer-module { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); display: none; }
+    .offer-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .note-box { background: #f0f6ff; border: 1px solid #c3d9f5; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #1a4a8a; line-height: 1.6; margin-bottom: 12px; display: flex; gap: 8px; }
+    .note-box i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* Workings */
+    .workings-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; margin-top: 1rem; background: #fff; border: 1px solid var(--border); border-radius: var(--r-md); cursor: pointer; user-select: none; transition: background .1s; }
+    .workings-toggle:hover { background: #f9f9f9; }
+    .workings-toggle span { font-size: 12px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 7px; letter-spacing: .03em; }
+    .workings-toggle .chevron { font-size: 15px; color: var(--subtle); transition: transform .2s; }
+    .workings-toggle.open .chevron { transform: rotate(180deg); }
+    .workings-body { display: none; padding: 12px 16px; background: #fafafa; border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--r-md) var(--r-md); font-size: 12px; color: var(--muted); line-height: 2; }
+    .workings-body.open { display: block; }
+    .workings-body div { border-bottom: 1px dashed #eee; padding: 2px 0; }
+    .workings-body div:last-child { border-bottom: none; }
+
+    .footer { margin-top: 2rem; text-align: center; font-size: 12px; color: var(--subtle); }
+
+    @media (max-width: 520px) {
+      .grid2, .offer-fields, .offer-row { grid-template-columns: 1fr; }
+      body { padding: 1rem .75rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="icon-wrap"><i class="ti ti-calculator"></i></div>
+    <div>
+      <h1>Salary Structure Calculator</h1>
+      <p>Compute a fully balanced monthly &amp; annual salary breakdown</p>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-settings"></i> Salary inputs</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Fixed CTC (annual)</label>
+        <div class="inp-wrap">
+          <span class="inp-prefix">₹</span>
+          <input type="number" id="fctc" placeholder="e.g. 720000" min="0" oninput="updateMonthly()"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Monthly CTC</label>
+        <div class="readonly-box" id="monthly-display">₹0</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Skill level (min wage)</label>
+        <select id="skill" class="ds">
+          <option value="13108">Unskilled — ₹13,108</option>
+          <option value="14130">Semi-skilled — ₹14,130</option>
+          <option value="14965">Skilled — ₹14,965</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>PF type</label>
+        <select id="pftype" class="ds">
+          <option value="A">Basic &lt;₹15K — (Gross−HRA)×12%</option>
+          <option value="B">Basic &lt;₹15K, capped — min(…,₹1,800)</option>
+          <option value="C">Basic ≥₹15K — Basic×12%</option>
+          <option value="D">Basic ≥₹15K, capped — ₹1,800 flat</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-dark btn-full" onclick="runCalc()">
+      <i class="ti ti-calculator"></i> Calculate salary
+    </button>
+  </div>
+
+  <!-- Badge -->
+  <div id="badge-wrap"></div>
+
+  <!-- Results table -->
+  <div class="table-wrap" id="table-wrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>Components</th>
+          <th class="num" style="width:120px">Monthly</th>
+          <th class="num" style="width:120px">Annually</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Basic</td><td class="num" id="t-basic-m">—</td><td class="num" id="t-basic-a">—</td></tr>
+        <tr><td>HRA</td><td class="num" id="t-hra-m">—</td><td class="num" id="t-hra-a">—</td></tr>
+        <tr><td>IR</td><td class="num" id="t-ir-m">—</td><td class="num" id="t-ir-a">—</td></tr>
+        <tr><td>Special Allowance</td><td class="num" id="t-spl-m">—</td><td class="num" id="t-spl-a">—</td></tr>
+        <tr><td>Leave Travel Allowance</td><td class="num" id="t-lta-m">—</td><td class="num" id="t-lta-a">—</td></tr>
+        <tr class="gross"><td>Gross Pay</td><td class="num" id="t-gross-m">—</td><td class="num" id="t-gross-a">—</td></tr>
+        <tr><td>Employee PF Contribution</td><td class="num" id="t-empf-m">—</td><td class="num" id="t-empf-a">—</td></tr>
+        <tr><td>Employee ESI Contribution</td><td class="num" id="t-emesi-m">—</td><td class="num" id="t-emesi-a">—</td></tr>
+        <tr><td>Professional Tax</td><td class="num" id="t-pt-m">—</td><td class="num" id="t-pt-a">—</td></tr>
+        <tr class="net"><td>Net Pay</td><td class="num" id="t-net-m">—</td><td class="num" id="t-net-a">—</td></tr>
+        <tr><td>Employer PF Contribution</td><td class="num" id="t-erpf-m">—</td><td class="num" id="t-erpf-a">—</td></tr>
+        <tr><td>Employer ESI Contribution</td><td class="num" id="t-eresi-m">—</td><td class="num" id="t-eresi-a">—</td></tr>
+        <tr><td>Gratuity</td><td class="num" id="t-grat-m">—</td><td class="num" id="t-grat-a">—</td></tr>
+        <tr class="total"><td>Total</td><td class="num" id="t-total-m">—</td><td class="num" id="t-total-a">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Offer Letter Module -->
+  <div class="offer-module" id="offer-module">
+    <div class="card-title"><i class="ti ti-file-text"></i> Export to offer letter</div>
+
+    <div class="note-box">
+      <i class="ti ti-info-circle"></i>
+      <div>Fill in the employee details below. The salary breakdown from the calculator will be automatically populated into the offer letter template and downloaded as a Word document.</div>
+    </div>
+
+    <div class="offer-fields">
+      <div class="field">
+        <label>Employee name</label>
+        <input type="text" id="emp-name" class="ds-plain" placeholder="e.g. Rahul Sharma"/>
+      </div>
+      <div class="field">
+        <label>Designation</label>
+        <input type="text" id="emp-designation" class="ds-plain" placeholder="e.g. Senior Engineer"/>
+      </div>
+      <div class="field">
+        <label>Expected joining date</label>
+        <input type="date" id="emp-joining" class="ds-plain"/>
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <input type="text" id="emp-dept" class="ds-plain" placeholder="e.g. Technology"/>
+      </div>
+    </div>
+
+    <div class="offer-row">
+      <button class="btn btn-offer" id="btn-download" onclick="downloadOfferLetter()">
+        <i class="ti ti-file-download"></i> Download Offer Letter
+      </button>
+      <button class="btn btn-dark" onclick="downloadBlankTemplate()">
+        <i class="ti ti-download"></i> Download Blank Template
+      </button>
+    </div>
+  </div>
+
+  <!-- Workings -->
+  <div id="workings-section" style="display:none">
+    <div class="workings-toggle" id="workings-toggle" onclick="toggleWorkings()">
+      <span><i class="ti ti-math-function"></i> Formula workings</span>
+      <i class="ti ti-chevron-down chevron"></i>
+    </div>
+    <div class="workings-body" id="workings-body">
+      <div id="w-basic"></div><div id="w-hra"></div><div id="w-ir"></div>
+      <div id="w-lta"></div><div id="w-spl"></div><div id="w-gross"></div>
+      <div id="w-empf"></div><div id="w-emesi"></div><div id="w-pt"></div>
+      <div id="w-erpf"></div><div id="w-eresi"></div><div id="w-grat"></div>
+      <div id="w-total"></div>
+    </div>
+  </div>
+
+  <div class="footer">Salary Structure Calculator &nbsp;·&nbsp; All calculations are monthly unless stated</div>
+</div>
+
+<script>
+// ── Stored calc results ─────────────────────────────────────────────────
+var R = null;
+
+function fmtN(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function fmtD(n) { return '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function updateMonthly() {
+  var v = parseFloat(document.getElementById('fctc').value) || 0;
+  document.getElementById('monthly-display').textContent = fmtN(v / 12);
+}
+
+function getPF(t, basic, gross, hra) {
+  var b = gross - hra;
+  if (t === 'A') return b * 0.12;
+  if (t === 'B') return Math.min(1800, b * 0.12);
+  if (t === 'C') return basic * 0.12;
+  if (t === 'D') return 1800;
+  return 0;
+}
+
+function set2(mid, aid, m) {
+  document.getElementById(mid).textContent = fmtN(m);
+  document.getElementById(aid).textContent = fmtN(m * 12);
+}
+
+function toggleWorkings() {
+  document.getElementById('workings-toggle').classList.toggle('open');
+  document.getElementById('workings-body').classList.toggle('open');
+}
+
+function runCalc() {
+  var fctc = parseFloat(document.getElementById('fctc').value) || 0;
+  var minw = parseFloat(document.getElementById('skill').value);
+  var pft  = document.getElementById('pftype').value;
+  var skillLabel = document.getElementById('skill').options[document.getElementById('skill').selectedIndex].text;
+  var bw = document.getElementById('badge-wrap');
+
+  if (fctc <= 0) {
+    bw.innerHTML = '<span class="badge err"><i class="ti ti-alert-circle"></i> Please enter a valid Fixed CTC.</span>';
+    return;
+  }
+
+  var mctc     = fctc / 12;
+  document.getElementById('monthly-display').textContent = fmtN(mctc);
+
+  var basic    = Math.max((fctc / 12) * 0.4882574, minw);
+  var gratuity = basic * 0.0481;
+  var erESI    = basic < 20000 ? basic * 0.0325 : 0;
+  var lta      = fctc >= 650000 ? basic * 0.1 : 0;
+  var ir       = fctc >= 650000 ? 1000 : 0;
+  var hra = basic * 0.5, spl = 0, erPF = 0;
+
+  for (var i = 0; i < 300; i++) {
+    var g = basic + hra + spl + lta + ir;
+    erPF  = getPF(pft, basic, g, hra);
+    var total = g + erPF + gratuity;
+    var ns = spl + (mctc - total);
+    if (Math.abs(ns - spl) < 0.0001) { spl = ns; break; }
+    spl = ns;
+  }
+
+  if (spl < 0) {
+    spl = 0; hra = basic * 0.5;
+    for (var j = 0; j < 300; j++) {
+      var g2     = basic + hra + lta + ir;
+      erPF       = getPF(pft, basic, g2, hra);
+      var needed = mctc - basic - lta - ir - erPF - gratuity;
+      var nh     = Math.min(basic * 0.5, Math.max(0, needed));
+      if (Math.abs(nh - hra) < 0.0001) { hra = nh; break; }
+      hra = nh;
+    }
+  }
+
+  var gross = basic + hra + spl + lta + ir;
+  erPF      = getPF(pft, basic, gross, hra);
+  var total = gross + erPF + gratuity;
+  spl      += (mctc - total);
+  gross     = basic + hra + spl + lta + ir;
+  total     = gross + erPF + gratuity;
+
+  var emPF  = getPF(pft, basic, gross, hra);
+  var emESI = basic < 21000 ? basic * 0.0075 : 0;
+  var pt    = gross < 15000 ? 0 : gross <= 20000 ? 150 : 200;
+  var net   = gross - emPF - emESI - pt;
+
+  // Store for offer letter
+  R = { fctc, mctc, basic, hra, ir, spl, lta, gross, emPF, emESI, pt, net, erPF, erESI, gratuity, total };
+
+  set2('t-basic-m',  't-basic-a',  basic);
+  set2('t-hra-m',    't-hra-a',    hra);
+  set2('t-ir-m',     't-ir-a',     ir);
+  set2('t-spl-m',    't-spl-a',    spl);
+  set2('t-lta-m',    't-lta-a',    lta);
+  set2('t-gross-m',  't-gross-a',  gross);
+  set2('t-empf-m',   't-empf-a',   emPF);
+  set2('t-emesi-m',  't-emesi-a',  emESI);
+  set2('t-pt-m',     't-pt-a',     pt);
+  set2('t-net-m',    't-net-a',    net);
+  set2('t-erpf-m',   't-erpf-a',   erPF);
+  set2('t-eresi-m',  't-eresi-a',  erESI);
+  set2('t-grat-m',   't-grat-a',   gratuity);
+  set2('t-total-m',  't-total-a',  total);
+
+  var pfDesc = pft === 'A' ? '(Gross−HRA)×12%' : pft === 'B' ? 'min((Gross−HRA)×12%, ₹1,800)' : pft === 'C' ? 'Basic×12%' : '₹1,800 flat';
+  var basicFormula = (fctc / 12) * 0.4882574 >= minw
+    ? 'Basic = (' + fmtN(fctc) + ' ÷ 12) × 0.4882574 = ' + fmtN(basic)
+    : 'Basic = Min wage floor (' + skillLabel.split('—')[0].trim() + ') = ' + fmtN(basic);
+  document.getElementById('w-basic').textContent  = basicFormula;
+  document.getElementById('w-hra').textContent    = 'HRA = Basic × 50% = ' + fmtN(hra);
+  document.getElementById('w-ir').textContent     = 'IR = Fixed CTC ' + (fctc >= 650000 ? '≥' : '<') + ' ₹6,50,000 → ' + fmtN(ir);
+  document.getElementById('w-lta').textContent    = 'LTA = ' + (fctc >= 650000 ? 'Basic × 10% = ' + fmtN(lta) : 'Fixed CTC < ₹6,50,000 → ₹0');
+  document.getElementById('w-spl').textContent    = 'Special Allowance = balancing figure = ' + fmtN(spl);
+  document.getElementById('w-gross').textContent  = 'Gross = ' + fmtN(basic) + ' + ' + fmtN(hra) + ' + ' + fmtN(ir) + ' + ' + fmtN(spl) + ' + ' + fmtN(lta) + ' = ' + fmtN(gross);
+  document.getElementById('w-empf').textContent   = 'Employee PF (' + pfDesc + ') = ' + fmtN(emPF);
+  document.getElementById('w-emesi').textContent  = 'Employee ESI = ' + (basic < 21000 ? 'Basic×0.75% = ' + fmtN(emESI) : 'Basic ≥ ₹21,000 → ₹0');
+  document.getElementById('w-pt').textContent     = 'PT = ' + (gross < 15000 ? '₹0 (Gross<15K)' : gross <= 20000 ? '₹150 (15K–20K)' : '₹200 (>20K)') + ' = ' + fmtN(pt);
+  document.getElementById('w-erpf').textContent   = 'Employer PF (' + pfDesc + ') = ' + fmtN(erPF);
+  document.getElementById('w-eresi').textContent  = 'Employer ESI = ' + (basic < 20000 ? 'Basic×3.25% = ' + fmtN(erESI) : 'Basic ≥ ₹20,000 → ₹0');
+  document.getElementById('w-grat').textContent   = 'Gratuity = Basic×4.81% = ' + fmtN(gratuity);
+  document.getElementById('w-total').textContent  = 'Total = ' + fmtN(gross) + ' + ' + fmtN(erPF) + ' + ' + fmtN(gratuity) + ' = ' + fmtN(total) + ' (= Monthly CTC ✓)';
+
+  var ad = Math.abs(total - mctc);
+  bw.innerHTML = ad < 0.5
+    ? '<span class="badge ok"><i class="ti ti-check"></i> Balanced — Total = Monthly CTC (' + fmtN(mctc) + ')</span>'
+    : '<span class="badge err"><i class="ti ti-alert-circle"></i> Gap of ₹' + ad.toFixed(2) + '</span>';
+
+  document.getElementById('table-wrap').style.display      = 'block';
+  document.getElementById('offer-module').style.display    = 'block';
+  document.getElementById('workings-section').style.display = 'block';
+  document.getElementById('workings-toggle').classList.remove('open');
+  document.getElementById('workings-body').classList.remove('open');
+}
+
+// ── Offer Letter Generation ─────────────────────────────────────────────
+function fmtOffer(n) {
+  return '\u20B9 ' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatJoiningDate(dateStr) {
+  if (!dateStr) return '\u00ABExpected Joining Date\u00BB';
+  var d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function buildOfferDoc(designation, joiningDate, empName, dept, data) {
+  var docx = window.docx;
+  var {
+    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+    AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
+    HeadingLevel, PageNumber, Footer, LevelFormat
+  } = docx;
+
+  var bdr = { style: BorderStyle.SINGLE, size: 4, color: "AAAAAA" };
+  var borders = { top: bdr, bottom: bdr, left: bdr, right: bdr };
+  var noBdr = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+  var noBorders = { top: noBdr, bottom: noBdr, left: noBdr, right: noBdr };
+
+  var TW = 9360;
+  var C1 = 4320, C2 = 2520, C3 = 2520;
+
+  function run(text, opts) {
+    opts = opts || {};
+    return new TextRun(Object.assign({ text: text, font: 'Calibri', size: 22 }, opts));
+  }
+
+  function para(children, opts) {
+    opts = opts || {};
+    return new Paragraph(Object.assign({ children: Array.isArray(children) ? children : [children], spacing: { after: 120 } }, opts));
+  }
+
+  function hdrCell(text) {
+    return new TableCell({
+      width: { size: C1, type: WidthType.DXA },
+      borders,
+      shading: { fill: '1C1C2E', type: ShadingType.CLEAR },
+      margins: { top: 80, bottom: 80, left: 120, right: 120 },
+      children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [run(text, { bold: true, color: 'FFFFFF' })] })]
+    });
+  }
+  function hdrCellNum(text, w) {
+    return new TableCell({
+      width: { size: w, type: WidthType.DXA },
+      borders,
+      shading: { fill: '1C1C2E', type: ShadingType.CLEAR },
+      margins: { top: 80, bottom: 80, left: 120, right: 120 },
+      children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [run(text, { bold: true, color: 'FFFFFF' })] })]
+    });
+  }
+
+  function dataRow(label, monthly, annual, bold, bg) {
+    bg = bg || null;
+    var shade = bg ? { fill: bg, type: ShadingType.CLEAR } : undefined;
+    var txtColor = bg ? 'FFFFFF' : '000000';
+    return new TableRow({
+      children: [
+        new TableCell({ width: { size: C1, type: WidthType.DXA }, borders, shading: shade, margins: { top: 60, bottom: 60, left: 120, right: 120 }, children: [new Paragraph({ children: [run(label, { bold: !!bold, color: txtColor })] })] }),
+        new TableCell({ width: { size: C2, type: WidthType.DXA }, borders, shading: shade, margins: { top: 60, bottom: 60, left: 120, right: 120 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [run(fmtOffer(monthly), { bold: !!bold, color: txtColor })] })] }),
+        new TableCell({ width: { size: C3, type: WidthType.DXA }, borders, shading: shade, margins: { top: 60, bottom: 60, left: 120, right: 120 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [run(fmtOffer(annual), { bold: !!bold, color: txtColor })] })] }),
+      ]
+    });
+  }
+
+  var d = data;
+  var salTable = new Table({
+    width: { size: TW, type: WidthType.DXA },
+    columnWidths: [C1, C2, C3],
+    rows: [
+      // Header
+      new TableRow({ children: [hdrCell('Components'), hdrCellNum('Monthly', C2), hdrCellNum('Annual', C3)] }),
+      // Earnings
+      dataRow('Basic',                       d.basic,    d.basic   * 12),
+      dataRow('HRA',                         d.hra,      d.hra     * 12),
+      dataRow('IR (Internet Reimbursement)', d.ir,       d.ir      * 12),
+      dataRow('Special Allowance',           d.spl,      d.spl     * 12),
+      dataRow('Leave Travel Allowance',      d.lta,      d.lta     * 12),
+      // Gross
+      dataRow('Gross Pay',                   d.gross,    d.gross   * 12, true, '1565C0'),
+      // Deductions
+      dataRow('Employee PF Contribution',    d.emPF,     d.emPF    * 12),
+      dataRow('Employee ESI Contribution',   d.emESI,    d.emESI   * 12),
+      dataRow('Professional Tax',            d.pt,       d.pt      * 12),
+      // Net
+      dataRow('Net Pay',                     d.net,      d.net     * 12, true, '00695C'),
+      // Employer
+      dataRow('Employer PF Contribution',    d.erPF,     d.erPF    * 12),
+      dataRow('Employer ESI Contribution',   d.erESI,    d.erESI   * 12),
+      dataRow('Gratuity',                    d.gratuity, d.gratuity* 12),
+      // Total
+      dataRow('Total',                       d.total,    d.total   * 12, true, '2E7D32'),
+    ]
+  });
+
+  var greetName = empName ? ', ' + empName : '';
+  var deptLine  = dept ? ' in the ' + dept + ' department' : '';
+
+  var doc = new Document({
+    styles: {
+      default: { document: { run: { font: 'Calibri', size: 22 } } }
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 12240, height: 15840 },
+          margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 }
+        }
+      },
+      footers: {
+        default: new Footer({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [run('Confidential — For addressee only', { size: 18, color: '888888' })]
+          })]
+        })
+      },
+      children: [
+        // Title
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+          children: [run('OFFER LETTER', { bold: true, size: 32, color: '1C1C2E' })]
+        }),
+
+        // Salutation
+        para([run('Dear' + greetName + ',')], { spacing: { after: 160 } }),
+
+        // Opening para
+        para([
+          run('Congratulations! Subsequent to the discussions we had with you recently, it is a sincere pleasure to make you an offer in our organization as '),
+          run('"' + (designation || '\u00ABDesignation\u00BB') + '"', { bold: true }),
+          run(deptLine + '. We are confident that we will provide you with a fulfilling work environment including your personal and professional growth. We expect greater responsibilities to come your way at a faster rate based on your performance and the company\'s anticipated growth. Your date of joining is '),
+          run(formatJoiningDate(joiningDate), { bold: true }),
+          run('.'),
+        ], { spacing: { after: 200 } }),
+
+        para([run('Please find the details of your compensation structure below:')], { spacing: { after: 140 } }),
+
+        // Salary table
+        salTable,
+
+        new Paragraph({ spacing: { before: 160, after: 80 }, children: [] }),
+
+        // Notes
+        para([run('** In addition to the above, you will be covered in the company group Mediclaim insurance coverage of Rs. 3 lacs for self and family of up to five members including parents.', { size: 20, color: '444444' })]),
+        para([run('** Employee Provident Fund and Gratuity will be paid as per the statutory requirements laid out by the Government of India.', { size: 20, color: '444444' })], { spacing: { after: 200 } }),
+
+        // Terms
+        new Paragraph({
+          spacing: { before: 160, after: 80 },
+          children: [
+            run('Terms: ', { bold: true }),
+            run('There will be a 3 (Three) months\u2019 probation period to review satisfactory performance prior to confirmation. This offer and the position are contingent on confirming all of the required paperwork listed below to be submitted by you to our HR department and successful clearance from any pending references. Any false statements or important information withheld by you from the company could lead to automatic withdrawal of the offer and position without any notice period or pay.'),
+          ]
+        }),
+        new Paragraph({
+          spacing: { before: 80, after: 80 },
+          children: [
+            run('Notice Period: ', { bold: true }),
+            run('The employee and the employer are entitled to terminate this appointment without assigning any reason by giving '),
+            run('Three months\u2019 notice', { bold: true }),
+            run(' in writing or a payment of three month\u2019s salary in lieu thereof after completion of the service agreement.'),
+          ]
+        }),
+        new Paragraph({
+          spacing: { before: 80, after: 200 },
+          children: [
+            run('Service Agreement: ', { bold: true }),
+            run('Any issues subjected to performance, discipline, confidentiality, the company has the right to terminate your service at any point without giving notice period.'),
+          ]
+        }),
+
+        para([run('You are required to sign a copy of this letter confirming the acceptance of the terms of offer and policies existing and modified from time to time. You are also required to sign and be bound by the company\u2019s employment agreement including confidentiality, non-compete, non-disclosure, non-solicitation and proprietary information & invention clauses, which have been provided to you separately for your review.'), ], { spacing: { after: 120 } }),
+        para([run('Please note that your compensation package is confidential between you and the organization, and you are advised to discuss only with your employers.')], { spacing: { after: 120 } }),
+        para([run('Once again, let me express our unanimous excitement at the prospect of you joining the organization. We look forward to the prospect of a long and mutually rewarding professional relationship.')], { spacing: { after: 320 } }),
+
+        // Signature block
+        new Paragraph({
+          spacing: { before: 200, after: 80 },
+          children: [run('Authorised Signatory', { bold: true })]
+        }),
+        para([run('Name:  ___________________________')]),
+        para([run('Designation: ___________________________')]),
+        para([run('Date:  ___________________________')], { spacing: { after: 240 } }),
+
+        new Paragraph({ border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC', space: 1 } }, spacing: { before: 200, after: 80 }, children: [] }),
+        para([run('Employee Acceptance', { bold: true })]),
+        para([run('I, ' + (empName || '___________________________') + ', accept the offer of employment on the terms and conditions set out in this letter.')]),
+        para([run('Signature: ___________________________     Date: ___________________________')]),
+      ]
+    }]
+  });
+  return doc;
+}
+
+async function downloadOfferLetter() {
+  if (!R) { alert('Please run the salary calculator first.'); return; }
+  var designation = document.getElementById('emp-designation').value.trim() || '\u00ABDesignation\u00BB';
+  var joiningDate = document.getElementById('emp-joining').value;
+  var empName     = document.getElementById('emp-name').value.trim();
+  var dept        = document.getElementById('emp-dept').value.trim();
+
+  var btn = document.getElementById('btn-download');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Generating...';
+
+  try {
+    var doc = buildOfferDoc(designation, joiningDate, empName, dept, R);
+    var buffer = await window.docx.Packer.toBuffer(doc);
+    var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var fname = empName ? empName.replace(/\s+/g, '_') + '_Offer_Letter.docx' : 'Offer_Letter.docx';
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch(e) {
+    alert('Error generating document: ' + e.message);
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-file-download"></i> Download Offer Letter';
+}
+
+async function downloadBlankTemplate() {
+  var doc = buildOfferDoc('\u00ABDESIGNATION\u00BB', '', '', '', {
+    basic: 0, hra: 0, ir: 0, spl: 0, lta: 0, gross: 0,
+    emPF: 0, emESI: 0, pt: 0, net: 0, erPF: 0, erESI: 0, gratuity: 0, total: 0
+  });
+  var buffer = await window.docx.Packer.toBuffer(doc);
+  var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Offer_Letter_Template.docx';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
