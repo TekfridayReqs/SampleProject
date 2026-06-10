@@ -604,13 +604,14 @@ async function downloadOfferLetter() {
 
   try {
     var doc = buildOfferDoc(designation, joiningDate, empName, dept, R);
-    var buffer = await window.docx.Packer.toBuffer(doc);
-    var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    var blob = await window.docx.Packer.toBlob(doc);
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     var fname = empName ? empName.replace(/\s+/g, '_') + '_Offer_Letter.docx' : 'Offer_Letter.docx';
     a.download = fname;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   } catch(e) {
     alert('Error generating document: ' + e.message);
@@ -626,12 +627,13 @@ async function downloadBlankTemplate() {
     basic: 0, hra: 0, ir: 0, spl: 0, lta: 0, gross: 0,
     emPF: 0, emESI: 0, pt: 0, net: 0, erPF: 0, erESI: 0, gratuity: 0, total: 0
   });
-  var buffer = await window.docx.Packer.toBuffer(doc);
-  var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  var blob = await window.docx.Packer.toBlob(doc);
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'Offer_Letter_Template.docx';
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
 }
 </script>
