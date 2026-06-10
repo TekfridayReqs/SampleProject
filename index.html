@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Salary Structure Calculator</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
-  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+  <script src="./docx.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -396,12 +396,19 @@ function formatJoiningDate(dateStr) {
 }
 
 function buildOfferDoc(designation, joiningDate, empName, dept, data) {
-  var docx = window.docx;
-  var {
-    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-    AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
-    HeadingLevel, PageNumber, Footer, LevelFormat
-  } = docx;
+  if (!window.docx) { throw new Error('docx library not loaded. Make sure docx.js is in the same folder as index.html.'); }
+  var Document    = window.docx.Document;
+  var Packer      = window.docx.Packer;
+  var Paragraph   = window.docx.Paragraph;
+  var TextRun     = window.docx.TextRun;
+  var Table       = window.docx.Table;
+  var TableRow    = window.docx.TableRow;
+  var TableCell   = window.docx.TableCell;
+  var AlignmentType = window.docx.AlignmentType;
+  var BorderStyle = window.docx.BorderStyle;
+  var WidthType   = window.docx.WidthType;
+  var ShadingType = window.docx.ShadingType;
+  var Footer      = window.docx.Footer;
 
   var bdr = { style: BorderStyle.SINGLE, size: 4, color: "AAAAAA" };
   var borders = { top: bdr, bottom: bdr, left: bdr, right: bdr };
