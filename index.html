@@ -144,7 +144,7 @@
         <select id="skill" class="ds">
           <option value="13108">Unskilled — ₹13,108</option>
           <option value="14130">Semi-skilled — ₹14,130</option>
-          <option value="14965">Skilled — ₹14,965</option>
+          <option value="14915">Skilled — ₹14,915</option>
         </select>
       </div>
       <div class="field">
@@ -296,7 +296,9 @@ function runCalc() {
   var mctc     = fctc / 12;
   document.getElementById('monthly-display').textContent = fmtN(mctc);
 
-  var basic    = Math.max((fctc / 12) * 0.4882574, minw);
+  var basic    = fctc > 358000
+    ? Math.max(minw, mctc * 0.5)
+    : Math.max((fctc / 12) * 0.4882574, minw);
   var gratuity = basic * 0.0481;
   var erESI    = basic < 20000 ? basic * 0.0325 : 0;
   var lta      = fctc >= 650000 ? basic * 0.1 : 0;
@@ -355,9 +357,14 @@ function runCalc() {
   set2('t-total-m',  't-total-a',  total);
 
   var pfDesc = pft === 'A' ? '(Gross−HRA)×12%' : pft === 'B' ? 'min((Gross−HRA)×12%, ₹1,800)' : pft === 'C' ? 'Basic×12%' : '₹1,800 flat';
-  var basicFormula = (fctc / 12) * 0.4882574 >= minw
-    ? 'Basic = (' + fmtN(fctc) + ' ÷ 12) × 0.4882574 = ' + fmtN(basic)
-    : 'Basic = Min wage floor (' + skillLabel.split('—')[0].trim() + ') = ' + fmtN(basic);
+  var basicFormula;
+  if (fctc > 358000) {
+    basicFormula = 'Basic = MAX(MinWage ' + fmtN(minw) + ', Monthly CTC × 50% = ' + fmtN(mctc * 0.5) + ') = ' + fmtN(basic);
+  } else {
+    basicFormula = (fctc / 12) * 0.4882574 >= minw
+      ? 'Basic = (' + fmtN(fctc) + ' ÷ 12) × 0.4882574 = ' + fmtN(basic)
+      : 'Basic = Min wage floor (' + skillLabel.split('—')[0].trim() + ') = ' + fmtN(basic);
+  }
   document.getElementById('w-basic').textContent  = basicFormula;
   document.getElementById('w-hra').textContent    = 'HRA = Basic × 50% = ' + fmtN(hra);
   document.getElementById('w-ir').textContent     = 'IR = Fixed CTC ' + (fctc >= 650000 ? '≥' : '<') + ' ₹6,50,000 → ' + fmtN(ir);
