@@ -297,7 +297,7 @@ function runCalc() {
   document.getElementById('monthly-display').textContent = fmtN(mctc);
 
   var basic    = fctc > 358000
-    ? Math.max(minw, mctc * 0.5)
+    ? Math.max(minw, mctc * 0.4882574)
     : Math.max((fctc / 12) * 0.4882574, minw);
   var gratuity = basic * 0.0481;
   var erESI    = basic < 20000 ? basic * 0.0325 : 0;
@@ -359,7 +359,7 @@ function runCalc() {
   var pfDesc = pft === 'A' ? '(Gross−HRA)×12%' : pft === 'B' ? 'min((Gross−HRA)×12%, ₹1,800)' : pft === 'C' ? 'Basic×12%' : '₹1,800 flat';
   var basicFormula;
   if (fctc > 358000) {
-    basicFormula = 'Basic = MAX(MinWage ' + fmtN(minw) + ', Monthly CTC × 50% = ' + fmtN(mctc * 0.5) + ') = ' + fmtN(basic);
+    basicFormula = 'Basic = MAX(MinWage ' + fmtN(minw) + ', Monthly CTC × 48.82574% = ' + fmtN(mctc * 0.4882574) + ') = ' + fmtN(basic);
   } else {
     basicFormula = (fctc / 12) * 0.4882574 >= minw
       ? 'Basic = (' + fmtN(fctc) + ' ÷ 12) × 0.4882574 = ' + fmtN(basic)
